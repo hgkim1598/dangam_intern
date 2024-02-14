@@ -14,6 +14,15 @@
           </b-button>
           <b-button size="sm" variant="warning" @click="editItem(row.item)" class="control-button">수정</b-button>
           <b-button size="sm" variant="danger" @click="deleteItem(row.item)" class="control-button last-button">삭제</b-button>
+          <!-- 페이지네이션 컴포넌트 추가 -->
+          <Pagination
+            v-if="paging.total > 0"
+            :total="paging.total"
+            :pageSize="pageSize"
+            :currentPage="paging.nowPage"
+            v-on:changePage="changePage"
+            @changePage="changePage"
+          />
         </div>
       </template>
 
@@ -42,10 +51,12 @@
 <script>
 import axios from 'axios';
 import Create from './Create.vue';
+import Pagination from '@/components/Pagination.vue'; // 페이지네이션 컴포넌트 import
 
 export default {
   components: {
-    Create
+    Create,
+    Pagination // 페이지네이션 컴포넌트 등록
   },
   data() {
     return {
@@ -62,11 +73,13 @@ export default {
       ],
       items: [],
       rows: [],
-      infoModal: { id: 'info-modal', title: '', content: '' }
+      infoModal: { id: 'info-modal', title: '', content: '' },
+      pageSize: 5, // 페이지 당 보여줄 데이터 개수 설정
+      paging: {} // 페이지 정보를 담을 객체 추가
     };
   },
   created() {
-    this.fetchData();
+    this.fetchData(this.paging.nowPage);
   },
   computed: {
     modalTitle() {
@@ -74,11 +87,14 @@ export default {
     }
   },
   methods: {
-    async fetchData() {
+    async fetchData(page) {
       try {
-        const apiUrl = 'http://192.168.0.149:8000/fourchar';
+        // 페이지 번호에 따라 데이터를 가져오는 메서드
+        const apiUrl = `http://192.168.0.149:8000/fourchar?page=${page}`;
         const response = await axios.get(apiUrl);
         this.items = response.data.content;
+        this.paging.total = response.data.total_page; // total_page로부터 데이터를 가져와 할당
+        this.paging.nowPage = page; // 현재 페이지 정보 갱신
         // 각 아이템에 detailsShowing 프로퍼티 추가
         this.items.forEach(item => {
           this.$set(item, 'detailsShowing', false);
@@ -87,6 +103,8 @@ export default {
         console.error('데이터를 불러오는 중 오류 발생:', error);
       }
     },
+
+
     async handleNewIdiom(newIdiom) {
       this.items.push(newIdiom);
       this.closeModal();
@@ -137,14 +155,33 @@ export default {
     },
     toggleDetails(item) {
       item.detailsShowing = !item.detailsShowing;
+    },
+    changePage(page, data) {
+      // this.getJobLog(page, currentPage); // currentPage 값을 넘겨줌
+      // this.fetchData(page); // 페이지 변경 시 데이터 불러오기
+      this.items = data.content; // 받아온 데이터를 테이블에 보여줄 아이템으로 설정
+    },
+    async getJobLog(page) { // 페이지 정보에 따라 데이터를 불러오는 메소드
+      try {
+        const apiUrl = `http://192.168.0.149:8000/fourchar?p=${page}`; // 페이지에 따른 API URL 생성
+        const response = await axios.get(apiUrl);
+        this.items = response.data.content;
+        // 각 아이템에 detailsShowing 프로퍼티 추가
+        this.items.forEach(item => {
+          this.$set(item, 'detailsShowing', false);
+        });
+      } catch (error) {
+        console.error('데이터를 불러오는 중 오류 발생:', error);
+      }
     }
   }
 };
 </script>
 
+
 <style scoped>
 .table-container {
-  /* margin: 20px; */
+  margin: 20px;
   margin-top: 60px; /* 테이블 컨테이너의 상단 마진 설정 */
   position: relative;  /*부모 요소를 상대적으로 설정 */
 }
