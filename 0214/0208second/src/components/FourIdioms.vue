@@ -76,7 +76,7 @@ export default {
   methods: {
     async fetchData() {
       try {
-        const apiUrl = 'http://192.168.0.149:8000/fourchar';
+        const apiUrl = 'api/fourchar';
         const response = await axios.get(apiUrl);
         this.items = response.data.content;
         // 각 아이템에 detailsShowing 프로퍼티 추가
@@ -100,7 +100,7 @@ export default {
       const confirmDelete = confirm('삭제하시겠습니까?');
       if (confirmDelete) {
         try {
-          await axios.delete(`http://192.168.0.149:8000/fourchar/delete/${item.id}`);
+          await axios.delete(`api/delete/${item.id}`);
           const index = this.items.findIndex(i => i.id === item.id);
           if (index !== -1) {
             this.items.splice(index, 1);
